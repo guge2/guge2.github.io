@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>cattac的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="单目相机标定优化问题推导问题定义我们的目标是最小化重投影误差: $$\min \sum_{i&#x3D;1}^n |(u_i, v_i, 1) - AR(X_i, Y_i, Z_i) - At|^2$$ 其中:  $(u_i, v_i)$ 是图像平面上的2D点坐标 $(X_i, Y_i, Z_i)$ 是世界坐标系中的3D点坐标 $A$ 是相机内参矩阵 $R$ 是旋转矩阵 $t$ 是平移向量  1.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="cattac的博客">
+<meta property="og:url" content="https://guge2.github.io/2024/12/07/calib_math/index.html">
+<meta property="og:site_name" content="cattac的博客">
+<meta property="og:description" content="单目相机标定优化问题推导问题定义我们的目标是最小化重投影误差: $$\min \sum_{i&#x3D;1}^n |(u_i, v_i, 1) - AR(X_i, Y_i, Z_i) - At|^2$$ 其中:  $(u_i, v_i)$ 是图像平面上的2D点坐标 $(X_i, Y_i, Z_i)$ 是世界坐标系中的3D点坐标 $A$ 是相机内参矩阵 $R$ 是旋转矩阵 $t$ 是平移向量  1.">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-12-07T03:16:11.036Z">
+<meta property="article:modified_time" content="2024-09-03T07:04:07.000Z">
+<meta property="article:author" content="cattac">
+<meta property="article:tag" content="书籍, 算法, Python, C++">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="cattac的博客" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">cattac的博客</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">记录写读书笔记与技术</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://guge2.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-calib_math" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/12/07/calib_math/" class="article-date">
+  <time class="dt-published" datetime="2024-12-07T03:16:11.036Z" itemprop="datePublished">2024-12-07</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="单目相机标定优化问题推导"><a href="#单目相机标定优化问题推导" class="headerlink" title="单目相机标定优化问题推导"></a>单目相机标定优化问题推导</h1><h2 id="问题定义"><a href="#问题定义" class="headerlink" title="问题定义"></a>问题定义</h2><p>我们的目标是最小化重投影误差:</p>
+<p>$$<br>\min \sum_{i&#x3D;1}^n |(u_i, v_i, 1) - AR(X_i, Y_i, Z_i) - At|^2<br>$$</p>
+<p>其中:</p>
+<ul>
+<li>$(u_i, v_i)$ 是图像平面上的2D点坐标</li>
+<li>$(X_i, Y_i, Z_i)$ 是世界坐标系中的3D点坐标</li>
+<li>$A$ 是相机内参矩阵</li>
+<li>$R$ 是旋转矩阵</li>
+<li>$t$ 是平移向量</li>
+</ul>
+<h2 id="1-对相机内参的偏导"><a href="#1-对相机内参的偏导" class="headerlink" title="1. 对相机内参的偏导"></a>1. 对相机内参的偏导</h2><p>假设相机内参矩阵 $A$ 的形式为:</p>
+<p>$$<br>A &#x3D; \begin{bmatrix}<br>f_x &amp; s &amp; c_x \<br>0 &amp; f_y &amp; c_y \<br>0 &amp; 0 &amp; 1<br>\end{bmatrix}<br>$$</p>
+<p>其中 $f_x, f_y$ 是焦距, $c_x, c_y$ 是主点坐标, $s$ 是倾斜因子。</p>
+<p>设 $P &#x3D; R(X, Y, Z) + t &#x3D; (P_x, P_y, P_z)^T$, 则重投影点坐标为:</p>
+<p>$$<br>\begin{bmatrix}<br>u \<br>v \<br>1<br>\end{bmatrix} &#x3D; A \cdot P &#x3D; \begin{bmatrix}<br>f_x P_x + s P_y + c_x P_z \<br>f_y P_y + c_y P_z \<br>P_z<br>\end{bmatrix}<br>$$</p>
+<p>对各参数求偏导:</p>
+<p>$$<br>\frac{\partial u}{\partial f_x} &#x3D; P_x, \quad \frac{\partial v}{\partial f_x} &#x3D; 0<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial f_y} &#x3D; 0, \quad \frac{\partial v}{\partial f_y} &#x3D; P_y<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial c_x} &#x3D; P_z, \quad \frac{\partial v}{\partial c_x} &#x3D; 0<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial c_y} &#x3D; 0, \quad \frac{\partial v}{\partial c_y} &#x3D; P_z<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial s} &#x3D; P_y, \quad \frac{\partial v}{\partial s} &#x3D; 0<br>$$</p>
+<h2 id="2-对旋转参数的偏导"><a href="#2-对旋转参数的偏导" class="headerlink" title="2. 对旋转参数的偏导"></a>2. 对旋转参数的偏导</h2><p>我们使用罗德里格斯公式表示旋转矩阵 $R$:</p>
+<p>$$<br>R &#x3D; I + \sin\theta [\omega]_\times + (1-\cos\theta) [\omega]_\times^2<br>$$</p>
+<p>其中 $\omega &#x3D; (\omega_x, \omega_y, \omega_z)^T$ 是旋转向量, $\theta &#x3D; |\omega|$ 是旋转角度, $[\omega]_\times$ 是 $\omega$ 的反对称矩阵。</p>
+<p>对旋转向量 $\omega$ 求偏导:</p>
+<p>$$<br>\frac{\partial R}{\partial \omega_i} &#x3D; \frac{\partial R}{\partial \theta} \frac{\partial \theta}{\partial \omega_i} + \sin\theta \frac{\partial [\omega]_\times}{\partial \omega_i} + (1-\cos\theta) \frac{\partial [\omega]_\times^2}{\partial \omega_i}<br>$$</p>
+<p>其中:</p>
+<p>$$<br>\frac{\partial R}{\partial \theta} &#x3D; \cos\theta [\omega]_\times + \sin\theta [\omega]_\times^2<br>$$</p>
+<p>$$<br>\frac{\partial \theta}{\partial \omega_i} &#x3D; \frac{\omega_i}{\theta}<br>$$</p>
+<p>$$<br>\frac{\partial [\omega]_\times}{\partial \omega_i} \text{ 和 } \frac{\partial [\omega]_\times^2}{\partial \omega_i} \text{ 可以直接计算得到}<br>$$</p>
+<p>然后, 我们可以得到重投影坐标对旋转向量的偏导:</p>
+<p>$$<br>\frac{\partial u}{\partial \omega_i} &#x3D; f_x \frac{\partial (RP)_x}{\partial \omega_i} + s \frac{\partial (RP)_y}{\partial \omega_i} + c_x \frac{\partial (RP)_z}{\partial \omega_i}<br>$$</p>
+<p>$$<br>\frac{\partial v}{\partial \omega_i} &#x3D; f_y \frac{\partial (RP)_y}{\partial \omega_i} + c_y \frac{\partial (RP)_z}{\partial \omega_i}<br>$$</p>
+<p>其中从旋转向量到旋转矩阵的转换，以及旋转矩阵对旋转向量的导数计算。下面是对应的公式推导：</p>
+<ol>
+<li><p>旋转向量到旋转矩阵的转换（Rodrigues’ rotation formula）：</p>
+<p>设旋转向量 $\mathbf{in} &#x3D; \theta \mathbf{\omega}$，其中 $\theta$ 是旋转角度，$\mathbf{\omega}$ 是单位旋转轴。</p>
+<p>旋转矩阵 $R$ 可以表示为：</p>
+<p>$R &#x3D; I + \sin\theta[\mathbf{\omega}]_\times + (1-\cos\theta)[\mathbf{\omega}]_\times^2$</p>
+<p>其中 $[\mathbf{\omega}]_\times$ 是 $\mathbf{\omega}$ 的斜对称矩阵。</p>
+</li>
+<li><p>中间变量定义：</p>
+<p>$\mathbf{m3} &#x3D; \mathbf{in}$<br>$\mathbf{m2} &#x3D; [\mathbf{\omega}, \theta]^T$<br>$\mathbf{m1} &#x3D; [\alpha, \beta, \gamma, \text{vec}([\mathbf{\omega}]_\times), \text{vec}(\mathbf{\omega}\mathbf{\omega}^T)]^T$</p>
+<p>其中 $\alpha &#x3D; \cos\theta$, $\beta &#x3D; \sin\theta$, $\gamma &#x3D; 1-\cos\theta$</p>
+</li>
+<li><p>导数链式法则：</p>
+<p>$\frac{\partial R}{\partial \mathbf{in}} &#x3D; \frac{\partial R}{\partial \mathbf{m1}} \frac{\partial \mathbf{m1}}{\partial \mathbf{m2}} \frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} \frac{\partial \mathbf{m3}}{\partial \mathbf{in}}$</p>
+</li>
+<li><p>各部分导数：</p>
+<p>a. $\frac{\partial \mathbf{m3}}{\partial \mathbf{in}} &#x3D; \begin{bmatrix} I_{3\times3} \ \frac{\mathbf{in}^T}{\theta} \end{bmatrix}$</p>
+<p>b. $\frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} &#x3D; \begin{bmatrix} \frac{1}{\theta}I_{3\times3} &amp; -\frac{\mathbf{in}}{\theta^2} \ 0_{1\times3} &amp; 1 \end{bmatrix}$</p>
+<p>c. $\frac{\partial \mathbf{m1}}{\partial \mathbf{m2}}$ 是一个 21x4 的矩阵，其中：</p>
+<ul>
+<li>$\frac{\partial \alpha}{\partial \theta} &#x3D; -\sin\theta$</li>
+<li>$\frac{\partial \beta}{\partial \theta} &#x3D; \cos\theta$</li>
+<li>$\frac{\partial \gamma}{\partial \theta} &#x3D; \sin\theta$</li>
+<li>$\frac{\partial [\mathbf{\omega}]_\times}{\partial \mathbf{\omega}}$ 对应代码中的 4:12 行</li>
+<li>$\frac{\partial (\mathbf{\omega}\mathbf{\omega}^T)}{\partial \mathbf{\omega}}$ 对应代码中的 13:21 行</li>
+</ul>
+<p>d. $\frac{\partial R}{\partial \mathbf{m1}}$ 是一个 9x21 的矩阵，可以分解为：</p>
+<ul>
+<li>$\frac{\partial R}{\partial \alpha} &#x3D; I_{3\times3}$</li>
+<li>$\frac{\partial R}{\partial \beta} &#x3D; [\mathbf{\omega}]_\times$</li>
+<li>$\frac{\partial R}{\partial \gamma} &#x3D; \mathbf{\omega}\mathbf{\omega}^T$</li>
+<li>$\frac{\partial R}{\partial [\mathbf{\omega}]<em>\times} &#x3D; \beta I</em>{9\times9}$</li>
+<li>$\frac{\partial R}{\partial (\mathbf{\omega}\mathbf{\omega}^T)} &#x3D; \gamma I_{9\times9}$</li>
+</ul>
+</li>
+<li><p>最终结果：</p>
+<p>$\frac{\partial R}{\partial \mathbf{in}} &#x3D; \frac{\partial R}{\partial \mathbf{m1}} \frac{\partial \mathbf{m1}}{\partial \mathbf{m2}} \frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} \frac{\partial \mathbf{m3}}{\partial \mathbf{in}}$</p>
+<p>这就是代码中最后一行 <code>dRdin = dRdm1 * dm1dm2 * dm2dm3 * dm3din;</code> 所计算的结果。</p>
+</li>
+</ol>
+<p>这个推导过程展示了如何通过链式法则计算复杂函数的导数，将大问题分解为多个小步骤，每个步骤都相对简单和直观。</p>
+<h2 id="3-对平移向量的偏导"><a href="#3-对平移向量的偏导" class="headerlink" title="3. 对平移向量的偏导"></a>3. 对平移向量的偏导</h2><p>平移向量 $t &#x3D; (t_x, t_y, t_z)^T$ 的偏导比较直接:</p>
+<p>$$<br>\frac{\partial u}{\partial t_x} &#x3D; f_x, \quad \frac{\partial v}{\partial t_x} &#x3D; 0<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial t_y} &#x3D; s, \quad \frac{\partial v}{\partial t_y} &#x3D; f_y<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial t_z} &#x3D; c_x, \quad \frac{\partial v}{\partial t_z} &#x3D; c_y<br>$$</p>
+<h2 id="4-对3D点坐标的偏导"><a href="#4-对3D点坐标的偏导" class="headerlink" title="4. 对3D点坐标的偏导"></a>4. 对3D点坐标的偏导</h2><p>对于3D点坐标 $(X, Y, Z)$, 我们有:</p>
+<p>$$<br>\frac{\partial u}{\partial X} &#x3D; f_x r_{11} + s r_{21} + c_x r_{31}<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial Y} &#x3D; f_x r_{12} + s r_{22} + c_x r_{32}<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial Z} &#x3D; f_x r_{13} + s r_{23} + c_x r_{33}<br>$$</p>
+<p>$$<br>\frac{\partial v}{\partial X} &#x3D; f_y r_{21} + c_y r_{31}<br>$$</p>
+<p>$$<br>\frac{\partial v}{\partial Y} &#x3D; f_y r_{22} + c_y r_{32}<br>$$</p>
+<p>$$<br>\frac{\partial v}{\partial Z} &#x3D; f_y r_{23} + c_y r_{33}<br>$$</p>
+<p>其中 $r_{ij}$ 是旋转矩阵 $R$ 的第 $i$ 行第 $j$ 列元素。</p>
+<p>这些偏导数可以用于构建雅可比矩阵,进而在Levenberg-Marquardt优化算法中使用。每次迭代中,我们都会更新相机参数和3D点坐标,以最小化重投影误差。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://guge2.github.io/2024/12/07/calib_math/" data-id="cm4dlsvka0000dcjjb3bj8uaz" data-title="" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2024/12/07/mirror_calib/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          (no title)
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2024/11/17/hexoBlog/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Hexo 结合 Github部署个人博客</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">十二月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">十一月 2024</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2024/12/07/python%E9%A1%B9%E7%9B%AE%E5%B7%A5%E7%A8%8B%E5%8C%96/">Python 项目工程化开发</a>
+          </li>
+        
+          <li>
+            <a href="/2024/12/07/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/">书籍摘抄</a>
+          </li>
+        
+          <li>
+            <a href="/2024/12/07/mirror_calib/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2024/12/07/calib_math/">(no title)</a>
+          </li>
+        
+          <li>
+            <a href="/2024/11/17/hexoBlog/">Hexo 结合 Github部署个人博客</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 cattac<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
