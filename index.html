@@ -74,6 +74,215 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-calib_math" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/12/07/calib_math/" class="article-date">
+  <time class="dt-published" datetime="2024-12-07T04:19:01.000Z" itemprop="datePublished">2024-12-07</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2024/12/07/calib_math/">单目相机标定优化问题推导</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="单目相机标定优化问题推导"><a href="#单目相机标定优化问题推导" class="headerlink" title="单目相机标定优化问题推导"></a>单目相机标定优化问题推导</h1><h2 id="问题定义"><a href="#问题定义" class="headerlink" title="问题定义"></a>问题定义</h2><p>我们的目标是最小化重投影误差:</p>
+<p>$$<br>\min \sum_{i&#x3D;1}^n |(u_i, v_i, 1) - AR(X_i, Y_i, Z_i) - At|^2<br>$$</p>
+<p>其中:</p>
+<ul>
+<li>$(u_i, v_i)$ 是图像平面上的2D点坐标</li>
+<li>$(X_i, Y_i, Z_i)$ 是世界坐标系中的3D点坐标</li>
+<li>$A$ 是相机内参矩阵</li>
+<li>$R$ 是旋转矩阵</li>
+<li>$t$ 是平移向量</li>
+</ul>
+<h2 id="1-对相机内参的偏导"><a href="#1-对相机内参的偏导" class="headerlink" title="1. 对相机内参的偏导"></a>1. 对相机内参的偏导</h2><p>假设相机内参矩阵 $A$ 的形式为:</p>
+<p>$$<br>A &#x3D; \begin{bmatrix}<br>f_x &amp; s &amp; c_x \<br>0 &amp; f_y &amp; c_y \<br>0 &amp; 0 &amp; 1<br>\end{bmatrix}<br>$$</p>
+<p>其中 $f_x, f_y$ 是焦距, $c_x, c_y$ 是主点坐标, $s$ 是倾斜因子。</p>
+<p>设 $P &#x3D; R(X, Y, Z) + t &#x3D; (P_x, P_y, P_z)^T$, 则重投影点坐标为:</p>
+<p>$$<br>\begin{bmatrix}<br>u \<br>v \<br>1<br>\end{bmatrix} &#x3D; A \cdot P &#x3D; \begin{bmatrix}<br>f_x P_x + s P_y + c_x P_z \<br>f_y P_y + c_y P_z \<br>P_z<br>\end{bmatrix}<br>$$</p>
+<p>对各参数求偏导:</p>
+<p>$$<br>\frac{\partial u}{\partial f_x} &#x3D; P_x, \quad \frac{\partial v}{\partial f_x} &#x3D; 0<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial f_y} &#x3D; 0, \quad \frac{\partial v}{\partial f_y} &#x3D; P_y<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial c_x} &#x3D; P_z, \quad \frac{\partial v}{\partial c_x} &#x3D; 0<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial c_y} &#x3D; 0, \quad \frac{\partial v}{\partial c_y} &#x3D; P_z<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial s} &#x3D; P_y, \quad \frac{\partial v}{\partial s} &#x3D; 0<br>$$</p>
+<h2 id="2-对旋转参数的偏导"><a href="#2-对旋转参数的偏导" class="headerlink" title="2. 对旋转参数的偏导"></a>2. 对旋转参数的偏导</h2><p>我们使用罗德里格斯公式表示旋转矩阵 $R$:</p>
+<p>$$<br>R &#x3D; I + \sin\theta [\omega]_\times + (1-\cos\theta) [\omega]_\times^2<br>$$</p>
+<p>其中 $\omega &#x3D; (\omega_x, \omega_y, \omega_z)^T$ 是旋转向量, $\theta &#x3D; |\omega|$ 是旋转角度, $[\omega]_\times$ 是 $\omega$ 的反对称矩阵。</p>
+<p>对旋转向量 $\omega$ 求偏导:</p>
+<p>$$<br>\frac{\partial R}{\partial \omega_i} &#x3D; \frac{\partial R}{\partial \theta} \frac{\partial \theta}{\partial \omega_i} + \sin\theta \frac{\partial [\omega]_\times}{\partial \omega_i} + (1-\cos\theta) \frac{\partial [\omega]_\times^2}{\partial \omega_i}<br>$$</p>
+<p>其中:</p>
+<p>$$<br>\frac{\partial R}{\partial \theta} &#x3D; \cos\theta [\omega]_\times + \sin\theta [\omega]_\times^2<br>$$</p>
+<p>$$<br>\frac{\partial \theta}{\partial \omega_i} &#x3D; \frac{\omega_i}{\theta}<br>$$</p>
+<p>$$<br>\frac{\partial [\omega]_\times}{\partial \omega_i} \text{ 和 } \frac{\partial [\omega]_\times^2}{\partial \omega_i} \text{ 可以直接计算得到}<br>$$</p>
+<p>然后, 我们可以得到重投影坐标对旋转向量的偏导:</p>
+<p>$$<br>\frac{\partial u}{\partial \omega_i} &#x3D; f_x \frac{\partial (RP)_x}{\partial \omega_i} + s \frac{\partial (RP)_y}{\partial \omega_i} + c_x \frac{\partial (RP)_z}{\partial \omega_i}<br>$$</p>
+<p>$$<br>\frac{\partial v}{\partial \omega_i} &#x3D; f_y \frac{\partial (RP)_y}{\partial \omega_i} + c_y \frac{\partial (RP)_z}{\partial \omega_i}<br>$$</p>
+<p>其中从旋转向量到旋转矩阵的转换，以及旋转矩阵对旋转向量的导数计算。下面是对应的公式推导：</p>
+<ol>
+<li><p>旋转向量到旋转矩阵的转换（Rodrigues’ rotation formula）：</p>
+<p>设旋转向量 $\mathbf{in} &#x3D; \theta \mathbf{\omega}$，其中 $\theta$ 是旋转角度，$\mathbf{\omega}$ 是单位旋转轴。</p>
+<p>旋转矩阵 $R$ 可以表示为：</p>
+<p>$R &#x3D; I + \sin\theta[\mathbf{\omega}]_\times + (1-\cos\theta)[\mathbf{\omega}]_\times^2$</p>
+<p>其中 $[\mathbf{\omega}]_\times$ 是 $\mathbf{\omega}$ 的斜对称矩阵。</p>
+</li>
+<li><p>中间变量定义：</p>
+<p>$\mathbf{m3} &#x3D; \mathbf{in}$<br>$\mathbf{m2} &#x3D; [\mathbf{\omega}, \theta]^T$<br>$\mathbf{m1} &#x3D; [\alpha, \beta, \gamma, \text{vec}([\mathbf{\omega}]_\times), \text{vec}(\mathbf{\omega}\mathbf{\omega}^T)]^T$</p>
+<p>其中 $\alpha &#x3D; \cos\theta$, $\beta &#x3D; \sin\theta$, $\gamma &#x3D; 1-\cos\theta$</p>
+</li>
+<li><p>导数链式法则：</p>
+<p>$\frac{\partial R}{\partial \mathbf{in}} &#x3D; \frac{\partial R}{\partial \mathbf{m1}} \frac{\partial \mathbf{m1}}{\partial \mathbf{m2}} \frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} \frac{\partial \mathbf{m3}}{\partial \mathbf{in}}$</p>
+</li>
+<li><p>各部分导数：</p>
+<p>a. $\frac{\partial \mathbf{m3}}{\partial \mathbf{in}} &#x3D; \begin{bmatrix} I_{3\times3} \ \frac{\mathbf{in}^T}{\theta} \end{bmatrix}$</p>
+<p>b. $\frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} &#x3D; \begin{bmatrix} \frac{1}{\theta}I_{3\times3} &amp; -\frac{\mathbf{in}}{\theta^2} \ 0_{1\times3} &amp; 1 \end{bmatrix}$</p>
+<p>c. $\frac{\partial \mathbf{m1}}{\partial \mathbf{m2}}$ 是一个 21x4 的矩阵，其中：</p>
+<ul>
+<li>$\frac{\partial \alpha}{\partial \theta} &#x3D; -\sin\theta$</li>
+<li>$\frac{\partial \beta}{\partial \theta} &#x3D; \cos\theta$</li>
+<li>$\frac{\partial \gamma}{\partial \theta} &#x3D; \sin\theta$</li>
+<li>$\frac{\partial [\mathbf{\omega}]_\times}{\partial \mathbf{\omega}}$ 对应代码中的 4:12 行</li>
+<li>$\frac{\partial (\mathbf{\omega}\mathbf{\omega}^T)}{\partial \mathbf{\omega}}$ 对应代码中的 13:21 行</li>
+</ul>
+<p>d. $\frac{\partial R}{\partial \mathbf{m1}}$ 是一个 9x21 的矩阵，可以分解为：</p>
+<ul>
+<li>$\frac{\partial R}{\partial \alpha} &#x3D; I_{3\times3}$</li>
+<li>$\frac{\partial R}{\partial \beta} &#x3D; [\mathbf{\omega}]_\times$</li>
+<li>$\frac{\partial R}{\partial \gamma} &#x3D; \mathbf{\omega}\mathbf{\omega}^T$</li>
+<li>$\frac{\partial R}{\partial [\mathbf{\omega}]<em>\times} &#x3D; \beta I</em>{9\times9}$</li>
+<li>$\frac{\partial R}{\partial (\mathbf{\omega}\mathbf{\omega}^T)} &#x3D; \gamma I_{9\times9}$</li>
+</ul>
+</li>
+<li><p>最终结果：</p>
+<p>$\frac{\partial R}{\partial \mathbf{in}} &#x3D; \frac{\partial R}{\partial \mathbf{m1}} \frac{\partial \mathbf{m1}}{\partial \mathbf{m2}} \frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} \frac{\partial \mathbf{m3}}{\partial \mathbf{in}}$</p>
+<p>这就是代码中最后一行 <code>dRdin = dRdm1 * dm1dm2 * dm2dm3 * dm3din;</code> 所计算的结果。</p>
+</li>
+</ol>
+<p>这个推导过程展示了如何通过链式法则计算复杂函数的导数，将大问题分解为多个小步骤，每个步骤都相对简单和直观。</p>
+<h2 id="3-对平移向量的偏导"><a href="#3-对平移向量的偏导" class="headerlink" title="3. 对平移向量的偏导"></a>3. 对平移向量的偏导</h2><p>平移向量 $t &#x3D; (t_x, t_y, t_z)^T$ 的偏导比较直接:</p>
+<p>$$<br>\frac{\partial u}{\partial t_x} &#x3D; f_x, \quad \frac{\partial v}{\partial t_x} &#x3D; 0<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial t_y} &#x3D; s, \quad \frac{\partial v}{\partial t_y} &#x3D; f_y<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial t_z} &#x3D; c_x, \quad \frac{\partial v}{\partial t_z} &#x3D; c_y<br>$$</p>
+<h2 id="4-对3D点坐标的偏导"><a href="#4-对3D点坐标的偏导" class="headerlink" title="4. 对3D点坐标的偏导"></a>4. 对3D点坐标的偏导</h2><p>对于3D点坐标 $(X, Y, Z)$, 我们有:</p>
+<p>$$<br>\frac{\partial u}{\partial X} &#x3D; f_x r_{11} + s r_{21} + c_x r_{31}<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial Y} &#x3D; f_x r_{12} + s r_{22} + c_x r_{32}<br>$$</p>
+<p>$$<br>\frac{\partial u}{\partial Z} &#x3D; f_x r_{13} + s r_{23} + c_x r_{33}<br>$$</p>
+<p>$$<br>\frac{\partial v}{\partial X} &#x3D; f_y r_{21} + c_y r_{31}<br>$$</p>
+<p>$$<br>\frac{\partial v}{\partial Y} &#x3D; f_y r_{22} + c_y r_{32}<br>$$</p>
+<p>$$<br>\frac{\partial v}{\partial Z} &#x3D; f_y r_{23} + c_y r_{33}<br>$$</p>
+<p>其中 $r_{ij}$ 是旋转矩阵 $R$ 的第 $i$ 行第 $j$ 列元素。</p>
+<p>这些偏导数可以用于构建雅可比矩阵,进而在Levenberg-Marquardt优化算法中使用。每次迭代中,我们都会更新相机参数和3D点坐标,以最小化重投影误差。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://guge2.github.io/2024/12/07/calib_math/" data-id="cm4dluz2z0001jwjj89ma6gp2" data-title="单目相机标定优化问题推导" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
+    <article id="post-mirror_calib" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2024/12/07/mirror_calib/" class="article-date">
+  <time class="dt-published" datetime="2024-12-07T04:19:01.000Z" itemprop="datePublished">2024-12-07</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2024/12/07/mirror_calib/">标定与镜像扫描</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="标定与镜像扫描"><a href="#标定与镜像扫描" class="headerlink" title="标定与镜像扫描"></a>标定与镜像扫描</h1><p>重建的方案有两个:</p>
+<ul>
+<li>要操作图像: 同时翻转(y轴) 标定图像和扫描图像，并考虑畸变校正</li>
+<li>不操作图像: 重建出三维点后进行镜像翻转，并在重建前校正畸变</li>
+</ul>
+<h2 id="1-不操作图像"><a href="#1-不操作图像" class="headerlink" title="1. 不操作图像:"></a>1. 不操作图像:</h2><ul>
+<li><strong>无扫描头标定:</strong> 采集标定数据，常规的双目立体相机标定流程，获取相机内参、外参以及畸变参数；</li>
+<li><strong>带扫描头重建:</strong> 采集扫描数据，首先对图像进行畸变校正，再根据标定数据进行三维重建，获得镜中世界坐标系下的物体三维点 $P_m$；</li>
+</ul>
+<p>记镜中物体在左相机坐标系下的三维点为 $P_m$，真实物体在左相机坐标系下的三维点为 $P_w$，通过简单的Y方向镜像 $S_Y$ 翻转后有:<br>  $$ P_w &#x3D; \begin{bmatrix}<br>  x_w \ y_w \ z_w<br>  \end{bmatrix} &#x3D; \begin{bmatrix} 1 &amp; 0 &amp; 0 \ 0 &amp; -1 &amp; 0 \ 0 &amp; 0 &amp; 1 \end{bmatrix} \begin{bmatrix}<br>  x_m \ y_m \ z_m<br>  \end{bmatrix} &#x3D; S_Y P_m$$</p>
+<p>  该方法较为直观。</p>
+<h2 id="2-要操作图像"><a href="#2-要操作图像" class="headerlink" title="2. 要操作图像:"></a>2. 要操作图像:</h2><ul>
+<li><strong>无扫描头标定:</strong> 采集标定图像，所有图像沿 y 轴翻转，进行常规的双目立体相机标定流程，获取相机内参、外参和畸变参数；</li>
+<li><strong>带扫描头重建:</strong> 采集扫描图像，所有图像沿 y 轴翻转后，再进行畸变校正，之后进行三维重建，获取世界坐标系下的物体三维点 $P_w$；</li>
+</ul>
+<p>该方法将一些镜像翻转的操作隐含在标定和重建过程中。</p>
+<p>翻转前后的像素坐标 $p_l$, $p_r$ 的关系为:<br>$$ p’ &#x3D; \begin{bmatrix} u’ \ v’ \ 1\end{bmatrix} &#x3D; \begin{bmatrix} u \ H-v-1 \1 \end{bmatrix}  &#x3D; \begin{bmatrix} 1&amp;0&amp;0\0&amp;-1&amp;H-1\0&amp;0&amp;1 \end{bmatrix} \begin{bmatrix} u \ v \ 1 \end{bmatrix} &#x3D; S_\text{bmp} \cdot p $$</p>
+<h2 id="3-操作图像-old-与不操作图像-new-标定数据的联系"><a href="#3-操作图像-old-与不操作图像-new-标定数据的联系" class="headerlink" title="3. 操作图像 (old) 与不操作图像 (new) 标定数据的联系:"></a>3. 操作图像 (old) 与不操作图像 (new) 标定数据的联系:</h2><p>下列式子中, $S_\text{bmp} &#x3D; S_\text{bmp}^{-1}$, $S_X &#x3D; S_X^{-1}$,  $S_Y &#x3D; S_Y^{-1}$, $S_Z &#x3D; S_Z^{-1}$;</p>
+<ul>
+<li><p><strong>内参矩阵 $A$</strong> 隐式地将相机坐标系下的三维点沿着 y 轴镜像翻转: (SY), 这样做使得内参矩阵 $A[0]$ 与 $A[4]$ 均保持正数:<br>$$ A_\text{new} &#x3D; S_\text{bmp} \cdot A_\text{old} \cdot S_Y$$<br>$$ A_\text{old} &#x3D; S_\text{bmp} \cdot A_\text{new} \cdot S_Y$$</p>
+</li>
+<li><p><strong>外参矩阵 $R$, $T$</strong> 隐式地将世界坐标系下的三维点沿着 z 轴镜像翻转: (S_Z), 翻转之后再旋转至相机坐标系下, 再次沿着 y 轴镜像翻转: (S_Y), 这个 y 轴的镜像翻转将与 $A$ 中的翻转抵消:<br>$$ R_\text{new} &#x3D; S_Y \cdot R_\text{old} \cdot S_Z $$<br>$$ R_\text{old} &#x3D; S_Y \cdot R_\text{new} \cdot S_Z $$<br>$$ t_\text{new} &#x3D; S_Y \cdot t_\text{old} $$<br>$$ t_\text{old} &#x3D; S_Y \cdot t_\text{new} $$</p>
+</li>
+<li><p><strong>投影矩阵 $T$</strong>:<br>$$ T_\text{new} &#x3D; S_\text{bmp} \cdot A_\text{old} \cdot \begin{bmatrix}R_\text{old} \cdot S_Z &amp; T_\text{old}\end{bmatrix} $$<br>$$ T_\text{old} &#x3D; S_\text{bmp} \cdot A_\text{new} \cdot \begin{bmatrix}R_\text{new} \cdot S_Z &amp; T_\text{new}\end{bmatrix} $$</p>
+</li>
+<li><p><strong>立体外参</strong>:<br>$$ p_l &#x3D; R_l \cdot P_w + t_l $$<br>$$ p_r &#x3D; R_r \cdot P_w + t_r $$<br>所以:<br>$$ p_r &#x3D; R_r \cdot R_l^{-1} \cdot p_l + T_r - R_r \cdot R_l^{-1} \cdot T_l $$<br>即:<br>$$ $\mathcal{R} &#x3D; R_r \cdot R_l^{-1} $$<br>$$ $\mathcal{t} &#x3D; t_r - $\mathcal{R} \cdot t_l $$<br>带入两种标定的结果并化简得到立体外参:<br>$$\mathcal{R}_\text{old} &#x3D; S_Y \cdot $\mathcal{R}_\text{new} \cdot S_Y $$<br>$$ \mathcal{t}_\text{old} &#x3D; S_Y \cdot \mathcal{t}_\text{new} $$<br>则立体投影矩阵:<br>$$ \mathcal{T}_\text{old} &#x3D; S_\text{bmp} \cdot \mathcal{T}_\text{new} \cdot \begin{bmatrix}S_Y &amp; 0\ 0 &amp; 1\end{bmatrix} $$</p>
+</li>
+</ul>
+<h2 id="4-重建"><a href="#4-重建" class="headerlink" title="4. 重建"></a>4. 重建</h2><p>重建时，射线求交法与三角测量法等价。对于 <code>new</code> 方法，有对应点 $p_l(u_l, v_l)$ 和 $p_r(u_r, v_r)$，计算左相机坐标系下的三维物体坐标 $P_w$:</p>
+<p>$$ \tilde{p_l} &#x3D; A_{l,\text{new}} \cdot \tilde{P_w} $$<br>$$ \tilde{p_r} &#x3D; A_{r,\text{new}} \cdot (R_\text{new} \cdot \tilde{P_w} + t_\text{new})$$</p>
+<p>对于 <code>old</code> 方法，有对应点 $p_l’(u_l, H-v_l-1)$ 和 $p_r’(u_r, H-v_r-1)$，计算左相机坐标系下的三维物体坐标 $P_w’$:<br>$$ \tilde{p_l’} &#x3D; A_{l,\text{old}} \cdot \tilde{P_w’} $$<br>$$ \tilde{p_r’} &#x3D; A_{r,\text{old}} \cdot (R_\text{old} \cdot \tilde{P_w’} + t_\text{old}) $$<br>公式变形:</p>
+<p>$$ \tilde{p_l} &#x3D; S_\text{bmp} \cdot \tilde{p_l’} &#x3D; S_\text{bmp} \cdot A_{l,\text{old}} \cdot \tilde{P_w’} &#x3D; A_\text{new} \cdot S_Y \cdot \tilde{P_w’} $$<br>$$ \tilde{p_r} &#x3D; S_\text{bmp} \cdot \tilde{p_r’} &#x3D; S_\text{bmp} \cdot A_{r,\text{old}} \cdot (\mathcal{R}_\text{old} \cdot \tilde{P_w’} + \mathcal{t}<em>\text{old}) &#x3D; A</em>{r,\text{new}} \cdot (\mathcal{R}_\text{new} \cdot S_Y \cdot \tilde{P_w’} + \mathcal{t}_\text{new}) $$</p>
+<p>联立上述方程，得到 <code>new</code> 方法重建出的三维点 $P_w$ 与 <code>old</code> 方法重建出的三维点 $P_w’$ 的关系:<br>$$ P_w &#x3D; S_Y \cdot P_w’ $$<br>也就是关于 y 轴镜像翻转的关系。</p>
+<h2 id="6-考虑畸变模型"><a href="#6-考虑畸变模型" class="headerlink" title="6. 考虑畸变模型"></a>6. 考虑畸变模型</h2><h3 id="畸变模型"><a href="#畸变模型" class="headerlink" title="畸变模型"></a>畸变模型</h3><p>假设畸变参数为 $k_1, k_2, k_3$（径向畸变）和 $p_1, p_2$（切向畸变），像素坐标 $(u, v)$ 在归一化平面上的坐标为 $(x, y)$:</p>
+<p>畸变后得到的坐标 $(x_\text{distorted }, y_\text{distorted })$ 如下：<br>$$\left{\begin{array}{c}x_\text{distorted }&#x3D;x\left(1+k_1r^2+k_2r^4+k_3r^6\right)+2p_1xy+p_2\left(r^2+2x^2\right)\y_\text{distorted }&#x3D;y\left(1+k_1r^2+k_2r^4+k_3r^6\right)+2p_2xy+p_1\left(r^2+2y^2\right)\end{array}\right.$$</p>
+<h4 id="1-不操作图像方法（Old）"><a href="#1-不操作图像方法（Old）" class="headerlink" title="1. 不操作图像方法（Old）"></a>1. 不操作图像方法（Old）</h4><p>原始图像的畸变校正参数为 $k_1^\text{old}, k_2^\text{old}, k_3^\text{old}, p_1^\text{old}, p_2^\text{old}$。在该方法中，直接对图像应用这些畸变参数进行校正，并使用校正后的图像进行三维重建。<br>$$ p_{old} &#x3D; A_{old}^{-1} \cdot u_{old}$$</p>
+<h4 id="2-操作图像方法（New）"><a href="#2-操作图像方法（New）" class="headerlink" title="2. 操作图像方法（New）"></a>2. 操作图像方法（New）</h4><p>采集的图像在y轴上进行了翻转，对于翻转后的图像，畸变参数的计算需进行调整。像素坐标 $u_{old}(u, v, 1)$ 与归一化平面上的坐标 $p_{new}(x, y, 1)$ 的关系为：<br>$$ p_{new} &#x3D; A_{new}^{-1} \cdot u_{new} &#x3D; S_Y \cdot A_{old}^{-1}\cdot S_\text{bmp} \cdot u_{new} &#x3D; S_Y \cdot p_{old} $$<br>也就是说, 对于待重建物体的同一个点, 其在<code>old</code>和<code>new</code>方法中对应像素点在归一化平面上的坐标满足, 存在左右手对称的坐标轴关系:<br>$$ x_{new} &#x3D; x_{old} $$<br>$$ x_{newundist} &#x3D; x_{oldundist} $$<br>$$ y_{new} &#x3D; -y_{old} $$<br>$$ y_{newundist} &#x3D; -y_{oldundist} $$</p>
+<p>因此，对于翻转后的图像，其畸变模型变为：</p>
+<ul>
+<li><p><strong>径向畸变</strong>:<br>$$ r’^2 &#x3D; x_{new}^2 + y_{new}^2 &#x3D; x_{old}^2 + y_{old}^2 &#x3D; r^2 $$<br>由于 $r^2$ 不变，因此径向畸变参数不变.</p>
+</li>
+<li><p><strong>切向畸变</strong>:<br>对于切向畸变, 可得 $p_1^\text{new} &#x3D; -p_1^\text{old}$, $p_2^\text{new} &#x3D; p_2^\text{old}$, 这与实验所得畸变数据的规律一致.</p>
+</li>
+</ul>
+<h3 id="畸变模型联系"><a href="#畸变模型联系" class="headerlink" title="畸变模型联系:"></a>畸变模型联系:</h3><p>$$ [k_1^\text{new}, k_2^\text{new}, k_3^\text{new}, p_1^\text{new}, p_2^\text{new}] &#x3D; [k_1^\text{old}, k_2^\text{old}, k_3^\text{old}, -p_1^\text{old}, p_2^\text{old}] $$</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>通过理解上述关联，去畸变后的三维点一致, 重建结果互为镜像, 互相无形变。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://guge2.github.io/2024/12/07/mirror_calib/" data-id="cm4dluz310002jwjjeiax0tvu" data-title="标定与镜像扫描" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-python项目工程化" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2024/12/07/python%E9%A1%B9%E7%9B%AE%E5%B7%A5%E7%A8%8B%E5%8C%96/" class="article-date">
@@ -133,7 +342,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://guge2.github.io/2024/12/07/python%E9%A1%B9%E7%9B%AE%E5%B7%A5%E7%A8%8B%E5%8C%96/" data-id="cm4dlsvkk0003dcjj7ycg6ix0" data-title="Python 项目工程化开发" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="https://guge2.github.io/2024/12/07/python%E9%A1%B9%E7%9B%AE%E5%B7%A5%E7%A8%8B%E5%8C%96/" data-id="cm4dluz350003jwjjfbtmggeb" data-title="Python 项目工程化开发" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -371,196 +580,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://guge2.github.io/2024/12/07/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/" data-id="cm4dlsvko0004dcjj1tlua9qr" data-title="书籍摘抄" class="article-share-link"><span class="fa fa-share">分享</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-mirror_calib" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/12/07/mirror_calib/" class="article-date">
-  <time class="dt-published" datetime="2024-12-07T03:16:31.029Z" itemprop="datePublished">2024-12-07</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="标定与镜像扫描"><a href="#标定与镜像扫描" class="headerlink" title="标定与镜像扫描"></a>标定与镜像扫描</h1><p>重建的方案有两个:</p>
-<ul>
-<li>要操作图像: 同时翻转(y轴) 标定图像和扫描图像，并考虑畸变校正</li>
-<li>不操作图像: 重建出三维点后进行镜像翻转，并在重建前校正畸变</li>
-</ul>
-<h2 id="1-不操作图像"><a href="#1-不操作图像" class="headerlink" title="1. 不操作图像:"></a>1. 不操作图像:</h2><ul>
-<li><strong>无扫描头标定:</strong> 采集标定数据，常规的双目立体相机标定流程，获取相机内参、外参以及畸变参数；</li>
-<li><strong>带扫描头重建:</strong> 采集扫描数据，首先对图像进行畸变校正，再根据标定数据进行三维重建，获得镜中世界坐标系下的物体三维点 $P_m$；</li>
-</ul>
-<p>记镜中物体在左相机坐标系下的三维点为 $P_m$，真实物体在左相机坐标系下的三维点为 $P_w$，通过简单的Y方向镜像 $S_Y$ 翻转后有:<br>  $$ P_w &#x3D; \begin{bmatrix}<br>  x_w \ y_w \ z_w<br>  \end{bmatrix} &#x3D; \begin{bmatrix} 1 &amp; 0 &amp; 0 \ 0 &amp; -1 &amp; 0 \ 0 &amp; 0 &amp; 1 \end{bmatrix} \begin{bmatrix}<br>  x_m \ y_m \ z_m<br>  \end{bmatrix} &#x3D; S_Y P_m$$</p>
-<p>  该方法较为直观。</p>
-<h2 id="2-要操作图像"><a href="#2-要操作图像" class="headerlink" title="2. 要操作图像:"></a>2. 要操作图像:</h2><ul>
-<li><strong>无扫描头标定:</strong> 采集标定图像，所有图像沿 y 轴翻转，进行常规的双目立体相机标定流程，获取相机内参、外参和畸变参数；</li>
-<li><strong>带扫描头重建:</strong> 采集扫描图像，所有图像沿 y 轴翻转后，再进行畸变校正，之后进行三维重建，获取世界坐标系下的物体三维点 $P_w$；</li>
-</ul>
-<p>该方法将一些镜像翻转的操作隐含在标定和重建过程中。</p>
-<p>翻转前后的像素坐标 $p_l$, $p_r$ 的关系为:<br>$$ p’ &#x3D; \begin{bmatrix} u’ \ v’ \ 1\end{bmatrix} &#x3D; \begin{bmatrix} u \ H-v-1 \1 \end{bmatrix}  &#x3D; \begin{bmatrix} 1&amp;0&amp;0\0&amp;-1&amp;H-1\0&amp;0&amp;1 \end{bmatrix} \begin{bmatrix} u \ v \ 1 \end{bmatrix} &#x3D; S_\text{bmp} \cdot p $$</p>
-<h2 id="3-操作图像-old-与不操作图像-new-标定数据的联系"><a href="#3-操作图像-old-与不操作图像-new-标定数据的联系" class="headerlink" title="3. 操作图像 (old) 与不操作图像 (new) 标定数据的联系:"></a>3. 操作图像 (old) 与不操作图像 (new) 标定数据的联系:</h2><p>下列式子中, $S_\text{bmp} &#x3D; S_\text{bmp}^{-1}$, $S_X &#x3D; S_X^{-1}$,  $S_Y &#x3D; S_Y^{-1}$, $S_Z &#x3D; S_Z^{-1}$;</p>
-<ul>
-<li><p><strong>内参矩阵 $A$</strong> 隐式地将相机坐标系下的三维点沿着 y 轴镜像翻转: (SY), 这样做使得内参矩阵 $A[0]$ 与 $A[4]$ 均保持正数:<br>$$ A_\text{new} &#x3D; S_\text{bmp} \cdot A_\text{old} \cdot S_Y$$<br>$$ A_\text{old} &#x3D; S_\text{bmp} \cdot A_\text{new} \cdot S_Y$$</p>
-</li>
-<li><p><strong>外参矩阵 $R$, $T$</strong> 隐式地将世界坐标系下的三维点沿着 z 轴镜像翻转: (S_Z), 翻转之后再旋转至相机坐标系下, 再次沿着 y 轴镜像翻转: (S_Y), 这个 y 轴的镜像翻转将与 $A$ 中的翻转抵消:<br>$$ R_\text{new} &#x3D; S_Y \cdot R_\text{old} \cdot S_Z $$<br>$$ R_\text{old} &#x3D; S_Y \cdot R_\text{new} \cdot S_Z $$<br>$$ t_\text{new} &#x3D; S_Y \cdot t_\text{old} $$<br>$$ t_\text{old} &#x3D; S_Y \cdot t_\text{new} $$</p>
-</li>
-<li><p><strong>投影矩阵 $T$</strong>:<br>$$ T_\text{new} &#x3D; S_\text{bmp} \cdot A_\text{old} \cdot \begin{bmatrix}R_\text{old} \cdot S_Z &amp; T_\text{old}\end{bmatrix} $$<br>$$ T_\text{old} &#x3D; S_\text{bmp} \cdot A_\text{new} \cdot \begin{bmatrix}R_\text{new} \cdot S_Z &amp; T_\text{new}\end{bmatrix} $$</p>
-</li>
-<li><p><strong>立体外参</strong>:<br>$$ p_l &#x3D; R_l \cdot P_w + t_l $$<br>$$ p_r &#x3D; R_r \cdot P_w + t_r $$<br>所以:<br>$$ p_r &#x3D; R_r \cdot R_l^{-1} \cdot p_l + T_r - R_r \cdot R_l^{-1} \cdot T_l $$<br>即:<br>$$ $\mathcal{R} &#x3D; R_r \cdot R_l^{-1} $$<br>$$ $\mathcal{t} &#x3D; t_r - $\mathcal{R} \cdot t_l $$<br>带入两种标定的结果并化简得到立体外参:<br>$$\mathcal{R}_\text{old} &#x3D; S_Y \cdot $\mathcal{R}_\text{new} \cdot S_Y $$<br>$$ \mathcal{t}_\text{old} &#x3D; S_Y \cdot \mathcal{t}_\text{new} $$<br>则立体投影矩阵:<br>$$ \mathcal{T}_\text{old} &#x3D; S_\text{bmp} \cdot \mathcal{T}_\text{new} \cdot \begin{bmatrix}S_Y &amp; 0\ 0 &amp; 1\end{bmatrix} $$</p>
-</li>
-</ul>
-<h2 id="4-重建"><a href="#4-重建" class="headerlink" title="4. 重建"></a>4. 重建</h2><p>重建时，射线求交法与三角测量法等价。对于 <code>new</code> 方法，有对应点 $p_l(u_l, v_l)$ 和 $p_r(u_r, v_r)$，计算左相机坐标系下的三维物体坐标 $P_w$:</p>
-<p>$$ \tilde{p_l} &#x3D; A_{l,\text{new}} \cdot \tilde{P_w} $$<br>$$ \tilde{p_r} &#x3D; A_{r,\text{new}} \cdot (R_\text{new} \cdot \tilde{P_w} + t_\text{new})$$</p>
-<p>对于 <code>old</code> 方法，有对应点 $p_l’(u_l, H-v_l-1)$ 和 $p_r’(u_r, H-v_r-1)$，计算左相机坐标系下的三维物体坐标 $P_w’$:<br>$$ \tilde{p_l’} &#x3D; A_{l,\text{old}} \cdot \tilde{P_w’} $$<br>$$ \tilde{p_r’} &#x3D; A_{r,\text{old}} \cdot (R_\text{old} \cdot \tilde{P_w’} + t_\text{old}) $$<br>公式变形:</p>
-<p>$$ \tilde{p_l} &#x3D; S_\text{bmp} \cdot \tilde{p_l’} &#x3D; S_\text{bmp} \cdot A_{l,\text{old}} \cdot \tilde{P_w’} &#x3D; A_\text{new} \cdot S_Y \cdot \tilde{P_w’} $$<br>$$ \tilde{p_r} &#x3D; S_\text{bmp} \cdot \tilde{p_r’} &#x3D; S_\text{bmp} \cdot A_{r,\text{old}} \cdot (\mathcal{R}_\text{old} \cdot \tilde{P_w’} + \mathcal{t}<em>\text{old}) &#x3D; A</em>{r,\text{new}} \cdot (\mathcal{R}_\text{new} \cdot S_Y \cdot \tilde{P_w’} + \mathcal{t}_\text{new}) $$</p>
-<p>联立上述方程，得到 <code>new</code> 方法重建出的三维点 $P_w$ 与 <code>old</code> 方法重建出的三维点 $P_w’$ 的关系:<br>$$ P_w &#x3D; S_Y \cdot P_w’ $$<br>也就是关于 y 轴镜像翻转的关系。</p>
-<h2 id="6-考虑畸变模型"><a href="#6-考虑畸变模型" class="headerlink" title="6. 考虑畸变模型"></a>6. 考虑畸变模型</h2><h3 id="畸变模型"><a href="#畸变模型" class="headerlink" title="畸变模型"></a>畸变模型</h3><p>假设畸变参数为 $k_1, k_2, k_3$（径向畸变）和 $p_1, p_2$（切向畸变），像素坐标 $(u, v)$ 在归一化平面上的坐标为 $(x, y)$:</p>
-<p>畸变后得到的坐标 $(x_\text{distorted }, y_\text{distorted })$ 如下：<br>$$\left{\begin{array}{c}x_\text{distorted }&#x3D;x\left(1+k_1r^2+k_2r^4+k_3r^6\right)+2p_1xy+p_2\left(r^2+2x^2\right)\y_\text{distorted }&#x3D;y\left(1+k_1r^2+k_2r^4+k_3r^6\right)+2p_2xy+p_1\left(r^2+2y^2\right)\end{array}\right.$$</p>
-<h4 id="1-不操作图像方法（Old）"><a href="#1-不操作图像方法（Old）" class="headerlink" title="1. 不操作图像方法（Old）"></a>1. 不操作图像方法（Old）</h4><p>原始图像的畸变校正参数为 $k_1^\text{old}, k_2^\text{old}, k_3^\text{old}, p_1^\text{old}, p_2^\text{old}$。在该方法中，直接对图像应用这些畸变参数进行校正，并使用校正后的图像进行三维重建。<br>$$ p_{old} &#x3D; A_{old}^{-1} \cdot u_{old}$$</p>
-<h4 id="2-操作图像方法（New）"><a href="#2-操作图像方法（New）" class="headerlink" title="2. 操作图像方法（New）"></a>2. 操作图像方法（New）</h4><p>采集的图像在y轴上进行了翻转，对于翻转后的图像，畸变参数的计算需进行调整。像素坐标 $u_{old}(u, v, 1)$ 与归一化平面上的坐标 $p_{new}(x, y, 1)$ 的关系为：<br>$$ p_{new} &#x3D; A_{new}^{-1} \cdot u_{new} &#x3D; S_Y \cdot A_{old}^{-1}\cdot S_\text{bmp} \cdot u_{new} &#x3D; S_Y \cdot p_{old} $$<br>也就是说, 对于待重建物体的同一个点, 其在<code>old</code>和<code>new</code>方法中对应像素点在归一化平面上的坐标满足, 存在左右手对称的坐标轴关系:<br>$$ x_{new} &#x3D; x_{old} $$<br>$$ x_{newundist} &#x3D; x_{oldundist} $$<br>$$ y_{new} &#x3D; -y_{old} $$<br>$$ y_{newundist} &#x3D; -y_{oldundist} $$</p>
-<p>因此，对于翻转后的图像，其畸变模型变为：</p>
-<ul>
-<li><p><strong>径向畸变</strong>:<br>$$ r’^2 &#x3D; x_{new}^2 + y_{new}^2 &#x3D; x_{old}^2 + y_{old}^2 &#x3D; r^2 $$<br>由于 $r^2$ 不变，因此径向畸变参数不变.</p>
-</li>
-<li><p><strong>切向畸变</strong>:<br>对于切向畸变, 可得 $p_1^\text{new} &#x3D; -p_1^\text{old}$, $p_2^\text{new} &#x3D; p_2^\text{old}$, 这与实验所得畸变数据的规律一致.</p>
-</li>
-</ul>
-<h3 id="畸变模型联系"><a href="#畸变模型联系" class="headerlink" title="畸变模型联系:"></a>畸变模型联系:</h3><p>$$ [k_1^\text{new}, k_2^\text{new}, k_3^\text{new}, p_1^\text{new}, p_2^\text{new}] &#x3D; [k_1^\text{old}, k_2^\text{old}, k_3^\text{old}, -p_1^\text{old}, p_2^\text{old}] $$</p>
-<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>通过理解上述关联，去畸变后的三维点一致, 重建结果互为镜像, 互相无形变。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://guge2.github.io/2024/12/07/mirror_calib/" data-id="cm4dlsvki0002dcjj7trxfbbm" data-title="" class="article-share-link"><span class="fa fa-share">分享</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-calib_math" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2024/12/07/calib_math/" class="article-date">
-  <time class="dt-published" datetime="2024-12-07T03:16:11.036Z" itemprop="datePublished">2024-12-07</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="单目相机标定优化问题推导"><a href="#单目相机标定优化问题推导" class="headerlink" title="单目相机标定优化问题推导"></a>单目相机标定优化问题推导</h1><h2 id="问题定义"><a href="#问题定义" class="headerlink" title="问题定义"></a>问题定义</h2><p>我们的目标是最小化重投影误差:</p>
-<p>$$<br>\min \sum_{i&#x3D;1}^n |(u_i, v_i, 1) - AR(X_i, Y_i, Z_i) - At|^2<br>$$</p>
-<p>其中:</p>
-<ul>
-<li>$(u_i, v_i)$ 是图像平面上的2D点坐标</li>
-<li>$(X_i, Y_i, Z_i)$ 是世界坐标系中的3D点坐标</li>
-<li>$A$ 是相机内参矩阵</li>
-<li>$R$ 是旋转矩阵</li>
-<li>$t$ 是平移向量</li>
-</ul>
-<h2 id="1-对相机内参的偏导"><a href="#1-对相机内参的偏导" class="headerlink" title="1. 对相机内参的偏导"></a>1. 对相机内参的偏导</h2><p>假设相机内参矩阵 $A$ 的形式为:</p>
-<p>$$<br>A &#x3D; \begin{bmatrix}<br>f_x &amp; s &amp; c_x \<br>0 &amp; f_y &amp; c_y \<br>0 &amp; 0 &amp; 1<br>\end{bmatrix}<br>$$</p>
-<p>其中 $f_x, f_y$ 是焦距, $c_x, c_y$ 是主点坐标, $s$ 是倾斜因子。</p>
-<p>设 $P &#x3D; R(X, Y, Z) + t &#x3D; (P_x, P_y, P_z)^T$, 则重投影点坐标为:</p>
-<p>$$<br>\begin{bmatrix}<br>u \<br>v \<br>1<br>\end{bmatrix} &#x3D; A \cdot P &#x3D; \begin{bmatrix}<br>f_x P_x + s P_y + c_x P_z \<br>f_y P_y + c_y P_z \<br>P_z<br>\end{bmatrix}<br>$$</p>
-<p>对各参数求偏导:</p>
-<p>$$<br>\frac{\partial u}{\partial f_x} &#x3D; P_x, \quad \frac{\partial v}{\partial f_x} &#x3D; 0<br>$$</p>
-<p>$$<br>\frac{\partial u}{\partial f_y} &#x3D; 0, \quad \frac{\partial v}{\partial f_y} &#x3D; P_y<br>$$</p>
-<p>$$<br>\frac{\partial u}{\partial c_x} &#x3D; P_z, \quad \frac{\partial v}{\partial c_x} &#x3D; 0<br>$$</p>
-<p>$$<br>\frac{\partial u}{\partial c_y} &#x3D; 0, \quad \frac{\partial v}{\partial c_y} &#x3D; P_z<br>$$</p>
-<p>$$<br>\frac{\partial u}{\partial s} &#x3D; P_y, \quad \frac{\partial v}{\partial s} &#x3D; 0<br>$$</p>
-<h2 id="2-对旋转参数的偏导"><a href="#2-对旋转参数的偏导" class="headerlink" title="2. 对旋转参数的偏导"></a>2. 对旋转参数的偏导</h2><p>我们使用罗德里格斯公式表示旋转矩阵 $R$:</p>
-<p>$$<br>R &#x3D; I + \sin\theta [\omega]_\times + (1-\cos\theta) [\omega]_\times^2<br>$$</p>
-<p>其中 $\omega &#x3D; (\omega_x, \omega_y, \omega_z)^T$ 是旋转向量, $\theta &#x3D; |\omega|$ 是旋转角度, $[\omega]_\times$ 是 $\omega$ 的反对称矩阵。</p>
-<p>对旋转向量 $\omega$ 求偏导:</p>
-<p>$$<br>\frac{\partial R}{\partial \omega_i} &#x3D; \frac{\partial R}{\partial \theta} \frac{\partial \theta}{\partial \omega_i} + \sin\theta \frac{\partial [\omega]_\times}{\partial \omega_i} + (1-\cos\theta) \frac{\partial [\omega]_\times^2}{\partial \omega_i}<br>$$</p>
-<p>其中:</p>
-<p>$$<br>\frac{\partial R}{\partial \theta} &#x3D; \cos\theta [\omega]_\times + \sin\theta [\omega]_\times^2<br>$$</p>
-<p>$$<br>\frac{\partial \theta}{\partial \omega_i} &#x3D; \frac{\omega_i}{\theta}<br>$$</p>
-<p>$$<br>\frac{\partial [\omega]_\times}{\partial \omega_i} \text{ 和 } \frac{\partial [\omega]_\times^2}{\partial \omega_i} \text{ 可以直接计算得到}<br>$$</p>
-<p>然后, 我们可以得到重投影坐标对旋转向量的偏导:</p>
-<p>$$<br>\frac{\partial u}{\partial \omega_i} &#x3D; f_x \frac{\partial (RP)_x}{\partial \omega_i} + s \frac{\partial (RP)_y}{\partial \omega_i} + c_x \frac{\partial (RP)_z}{\partial \omega_i}<br>$$</p>
-<p>$$<br>\frac{\partial v}{\partial \omega_i} &#x3D; f_y \frac{\partial (RP)_y}{\partial \omega_i} + c_y \frac{\partial (RP)_z}{\partial \omega_i}<br>$$</p>
-<p>其中从旋转向量到旋转矩阵的转换，以及旋转矩阵对旋转向量的导数计算。下面是对应的公式推导：</p>
-<ol>
-<li><p>旋转向量到旋转矩阵的转换（Rodrigues’ rotation formula）：</p>
-<p>设旋转向量 $\mathbf{in} &#x3D; \theta \mathbf{\omega}$，其中 $\theta$ 是旋转角度，$\mathbf{\omega}$ 是单位旋转轴。</p>
-<p>旋转矩阵 $R$ 可以表示为：</p>
-<p>$R &#x3D; I + \sin\theta[\mathbf{\omega}]_\times + (1-\cos\theta)[\mathbf{\omega}]_\times^2$</p>
-<p>其中 $[\mathbf{\omega}]_\times$ 是 $\mathbf{\omega}$ 的斜对称矩阵。</p>
-</li>
-<li><p>中间变量定义：</p>
-<p>$\mathbf{m3} &#x3D; \mathbf{in}$<br>$\mathbf{m2} &#x3D; [\mathbf{\omega}, \theta]^T$<br>$\mathbf{m1} &#x3D; [\alpha, \beta, \gamma, \text{vec}([\mathbf{\omega}]_\times), \text{vec}(\mathbf{\omega}\mathbf{\omega}^T)]^T$</p>
-<p>其中 $\alpha &#x3D; \cos\theta$, $\beta &#x3D; \sin\theta$, $\gamma &#x3D; 1-\cos\theta$</p>
-</li>
-<li><p>导数链式法则：</p>
-<p>$\frac{\partial R}{\partial \mathbf{in}} &#x3D; \frac{\partial R}{\partial \mathbf{m1}} \frac{\partial \mathbf{m1}}{\partial \mathbf{m2}} \frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} \frac{\partial \mathbf{m3}}{\partial \mathbf{in}}$</p>
-</li>
-<li><p>各部分导数：</p>
-<p>a. $\frac{\partial \mathbf{m3}}{\partial \mathbf{in}} &#x3D; \begin{bmatrix} I_{3\times3} \ \frac{\mathbf{in}^T}{\theta} \end{bmatrix}$</p>
-<p>b. $\frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} &#x3D; \begin{bmatrix} \frac{1}{\theta}I_{3\times3} &amp; -\frac{\mathbf{in}}{\theta^2} \ 0_{1\times3} &amp; 1 \end{bmatrix}$</p>
-<p>c. $\frac{\partial \mathbf{m1}}{\partial \mathbf{m2}}$ 是一个 21x4 的矩阵，其中：</p>
-<ul>
-<li>$\frac{\partial \alpha}{\partial \theta} &#x3D; -\sin\theta$</li>
-<li>$\frac{\partial \beta}{\partial \theta} &#x3D; \cos\theta$</li>
-<li>$\frac{\partial \gamma}{\partial \theta} &#x3D; \sin\theta$</li>
-<li>$\frac{\partial [\mathbf{\omega}]_\times}{\partial \mathbf{\omega}}$ 对应代码中的 4:12 行</li>
-<li>$\frac{\partial (\mathbf{\omega}\mathbf{\omega}^T)}{\partial \mathbf{\omega}}$ 对应代码中的 13:21 行</li>
-</ul>
-<p>d. $\frac{\partial R}{\partial \mathbf{m1}}$ 是一个 9x21 的矩阵，可以分解为：</p>
-<ul>
-<li>$\frac{\partial R}{\partial \alpha} &#x3D; I_{3\times3}$</li>
-<li>$\frac{\partial R}{\partial \beta} &#x3D; [\mathbf{\omega}]_\times$</li>
-<li>$\frac{\partial R}{\partial \gamma} &#x3D; \mathbf{\omega}\mathbf{\omega}^T$</li>
-<li>$\frac{\partial R}{\partial [\mathbf{\omega}]<em>\times} &#x3D; \beta I</em>{9\times9}$</li>
-<li>$\frac{\partial R}{\partial (\mathbf{\omega}\mathbf{\omega}^T)} &#x3D; \gamma I_{9\times9}$</li>
-</ul>
-</li>
-<li><p>最终结果：</p>
-<p>$\frac{\partial R}{\partial \mathbf{in}} &#x3D; \frac{\partial R}{\partial \mathbf{m1}} \frac{\partial \mathbf{m1}}{\partial \mathbf{m2}} \frac{\partial \mathbf{m2}}{\partial \mathbf{m3}} \frac{\partial \mathbf{m3}}{\partial \mathbf{in}}$</p>
-<p>这就是代码中最后一行 <code>dRdin = dRdm1 * dm1dm2 * dm2dm3 * dm3din;</code> 所计算的结果。</p>
-</li>
-</ol>
-<p>这个推导过程展示了如何通过链式法则计算复杂函数的导数，将大问题分解为多个小步骤，每个步骤都相对简单和直观。</p>
-<h2 id="3-对平移向量的偏导"><a href="#3-对平移向量的偏导" class="headerlink" title="3. 对平移向量的偏导"></a>3. 对平移向量的偏导</h2><p>平移向量 $t &#x3D; (t_x, t_y, t_z)^T$ 的偏导比较直接:</p>
-<p>$$<br>\frac{\partial u}{\partial t_x} &#x3D; f_x, \quad \frac{\partial v}{\partial t_x} &#x3D; 0<br>$$</p>
-<p>$$<br>\frac{\partial u}{\partial t_y} &#x3D; s, \quad \frac{\partial v}{\partial t_y} &#x3D; f_y<br>$$</p>
-<p>$$<br>\frac{\partial u}{\partial t_z} &#x3D; c_x, \quad \frac{\partial v}{\partial t_z} &#x3D; c_y<br>$$</p>
-<h2 id="4-对3D点坐标的偏导"><a href="#4-对3D点坐标的偏导" class="headerlink" title="4. 对3D点坐标的偏导"></a>4. 对3D点坐标的偏导</h2><p>对于3D点坐标 $(X, Y, Z)$, 我们有:</p>
-<p>$$<br>\frac{\partial u}{\partial X} &#x3D; f_x r_{11} + s r_{21} + c_x r_{31}<br>$$</p>
-<p>$$<br>\frac{\partial u}{\partial Y} &#x3D; f_x r_{12} + s r_{22} + c_x r_{32}<br>$$</p>
-<p>$$<br>\frac{\partial u}{\partial Z} &#x3D; f_x r_{13} + s r_{23} + c_x r_{33}<br>$$</p>
-<p>$$<br>\frac{\partial v}{\partial X} &#x3D; f_y r_{21} + c_y r_{31}<br>$$</p>
-<p>$$<br>\frac{\partial v}{\partial Y} &#x3D; f_y r_{22} + c_y r_{32}<br>$$</p>
-<p>$$<br>\frac{\partial v}{\partial Z} &#x3D; f_y r_{23} + c_y r_{33}<br>$$</p>
-<p>其中 $r_{ij}$ 是旋转矩阵 $R$ 的第 $i$ 行第 $j$ 列元素。</p>
-<p>这些偏导数可以用于构建雅可比矩阵,进而在Levenberg-Marquardt优化算法中使用。每次迭代中,我们都会更新相机参数和3D点坐标,以最小化重投影误差。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://guge2.github.io/2024/12/07/calib_math/" data-id="cm4dlsvka0000dcjjb3bj8uaz" data-title="" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="https://guge2.github.io/2024/12/07/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/" data-id="cm4dluz360004jwjja6vec7rl" data-title="书籍摘抄" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -659,7 +679,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://guge2.github.io/2024/11/17/hexoBlog/" data-id="cm4dlsvkf0001dcjjfu7o0031" data-title="Hexo 结合 Github部署个人博客" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="https://guge2.github.io/2024/11/17/hexoBlog/" data-id="cm4dluz2v0000jwjjgo8u8xc2" data-title="Hexo 结合 Github部署个人博客" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -702,19 +722,19 @@
       <ul>
         
           <li>
+            <a href="/2024/12/07/calib_math/">单目相机标定优化问题推导</a>
+          </li>
+        
+          <li>
+            <a href="/2024/12/07/mirror_calib/">标定与镜像扫描</a>
+          </li>
+        
+          <li>
             <a href="/2024/12/07/python%E9%A1%B9%E7%9B%AE%E5%B7%A5%E7%A8%8B%E5%8C%96/">Python 项目工程化开发</a>
           </li>
         
           <li>
             <a href="/2024/12/07/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/">书籍摘抄</a>
-          </li>
-        
-          <li>
-            <a href="/2024/12/07/mirror_calib/">(no title)</a>
-          </li>
-        
-          <li>
-            <a href="/2024/12/07/calib_math/">(no title)</a>
           </li>
         
           <li>

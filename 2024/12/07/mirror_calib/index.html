@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   
   
-  <title>cattac的博客</title>
+  <title>标定与镜像扫描 | cattac的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="标定与镜像扫描重建的方案有两个:  要操作图像: 同时翻转(y轴) 标定图像和扫描图像，并考虑畸变校正 不操作图像: 重建出三维点后进行镜像翻转，并在重建前校正畸变  1. 不操作图像: 无扫描头标定: 采集标定数据，常规的双目立体相机标定流程，获取相机内参、外参以及畸变参数； 带扫描头重建: 采集扫描数据，首先对图像进行畸变校正，再根据标定数据进行三维重建，获得镜中世界坐标系下的物体三维点 $P">
 <meta property="og:type" content="article">
-<meta property="og:title" content="cattac的博客">
+<meta property="og:title" content="标定与镜像扫描">
 <meta property="og:url" content="https://guge2.github.io/2024/12/07/mirror_calib/index.html">
 <meta property="og:site_name" content="cattac的博客">
 <meta property="og:description" content="标定与镜像扫描重建的方案有两个:  要操作图像: 同时翻转(y轴) 标定图像和扫描图像，并考虑畸变校正 不操作图像: 重建出三维点后进行镜像翻转，并在重建前校正畸变  1. 不操作图像: 无扫描头标定: 采集标定数据，常规的双目立体相机标定流程，获取相机内参、外参以及畸变参数； 带扫描头重建: 采集扫描数据，首先对图像进行畸变校正，再根据标定数据进行三维重建，获得镜中世界坐标系下的物体三维点 $P">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-12-07T03:16:31.029Z">
-<meta property="article:modified_time" content="2024-08-29T09:53:02.000Z">
+<meta property="article:published_time" content="2024-12-07T04:19:01.000Z">
+<meta property="article:modified_time" content="2024-12-07T03:18:20.400Z">
 <meta property="article:author" content="cattac">
 <meta property="article:tag" content="书籍, 算法, Python, C++">
 <meta name="twitter:card" content="summary">
@@ -79,12 +79,22 @@
         <section id="main"><article id="post-mirror_calib" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2024/12/07/mirror_calib/" class="article-date">
-  <time class="dt-published" datetime="2024-12-07T03:16:31.029Z" itemprop="datePublished">2024-12-07</time>
+  <time class="dt-published" datetime="2024-12-07T04:19:01.000Z" itemprop="datePublished">2024-12-07</time>
 </a>
     
   </div>
   <div class="article-inner">
     
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      标定与镜像扫描
+    </h1>
+  
+
+      </header>
     
     <div class="e-content article-entry" itemprop="articleBody">
       
@@ -138,7 +148,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://guge2.github.io/2024/12/07/mirror_calib/" data-id="cm4dlsvki0002dcjj7trxfbbm" data-title="" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="https://guge2.github.io/2024/12/07/mirror_calib/" data-id="cm4dluz310002jwjjeiax0tvu" data-title="标定与镜像扫描" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -148,19 +158,19 @@
     
 <nav id="article-nav">
   
-    <a href="/2024/12/07/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2024/12/07/calib_math/" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">前一篇</strong>
       <div class="article-nav-title">
         
-          书籍摘抄
+          单目相机标定优化问题推导
         
       </div>
     </a>
   
   
-    <a href="/2024/12/07/calib_math/" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="/2024/12/07/python%E9%A1%B9%E7%9B%AE%E5%B7%A5%E7%A8%8B%E5%8C%96/" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">后一篇</strong>
-      <div class="article-nav-title"></div>
+      <div class="article-nav-title">Python 项目工程化开发</div>
     </a>
   
 </nav>
@@ -198,19 +208,19 @@
       <ul>
         
           <li>
+            <a href="/2024/12/07/calib_math/">单目相机标定优化问题推导</a>
+          </li>
+        
+          <li>
+            <a href="/2024/12/07/mirror_calib/">标定与镜像扫描</a>
+          </li>
+        
+          <li>
             <a href="/2024/12/07/python%E9%A1%B9%E7%9B%AE%E5%B7%A5%E7%A8%8B%E5%8C%96/">Python 项目工程化开发</a>
           </li>
         
           <li>
             <a href="/2024/12/07/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/%E4%B9%A6%E7%B1%8D%E6%91%98%E6%8A%84/">书籍摘抄</a>
-          </li>
-        
-          <li>
-            <a href="/2024/12/07/mirror_calib/">(no title)</a>
-          </li>
-        
-          <li>
-            <a href="/2024/12/07/calib_math/">(no title)</a>
           </li>
         
           <li>
